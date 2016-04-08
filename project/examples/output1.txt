@@ -1,9 +1,0 @@
-## header message ##
-0 n1 (1) sending TCP segment to 2 for 0
-0 WARNING: Restarting timer.
-0.0100384 n2 (2) received TCP segment from 1; Seq: 0, Ack: 0
-0.0100384 n2 (2) sending TCP ACK to 1 for 48
-0.0200384 ACK RECEIVED: 48; RTT: 0.0200384
-0.0200384 -------> ENDING <-------
-
-# File transfer correct: output11.txt!
