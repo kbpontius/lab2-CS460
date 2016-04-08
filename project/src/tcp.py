@@ -8,7 +8,7 @@ from buffer import SendBuffer,ReceiveBuffer
 
 class TCP(Connection):
     ''' A TCP connection between two hosts.'''
-    def __init__(self,transport,source_address,source_port,destination_address,destination_port,app=None):
+    def __init__(self,transport,source_address,source_port,destination_address,destination_port,window_size=1000,app=None):
         Connection.__init__(self,transport,source_address,source_port, destination_address,destination_port,app)
 
         ### RTO Timer Properties
@@ -36,7 +36,7 @@ class TCP(Connection):
         self.mss = 1000
         # send window; represents the total number of bytes that may
         # be outstanding at one time
-        self.window = 30000
+        self.window = window_size
         # largest sequence number that has been ACKed so far; represents
         # the next sequence number the client expects to receive
         self.sequence = 0
@@ -357,7 +357,7 @@ class TCP(Connection):
 
     def restart_timer(self, timer_expired = False, print_trace = True):
         if print_trace:
-            self.trace("%s (%d) WARNING: Restarting timer." % (self.node.hostname, self.source_address))
+            self.trace("%s (%d) restarting timer." % (self.node.hostname, self.source_address))
 
         if self.send_buffer.available() == 0 and self.send_buffer.outstanding() == 0:
             self.cancel_timer()

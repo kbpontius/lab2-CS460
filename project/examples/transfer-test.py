@@ -39,7 +39,7 @@ class Main(object):
                                        version = "%prog 0.1")
 
         parser.add_option("-f","--filename",type="str",dest="filename",
-                          default='internet-architecture.pdf',
+                          default='test.txt',
                           help="filename to send")
 
         parser.add_option("-l","--loss",type="float",dest="loss",
@@ -91,8 +91,8 @@ class Main(object):
         a1 = AppHandler(self.filename, 1)
 
         # setup connection
-        c1a = TCP(t1, n1.get_address('n2'), 1, n2.get_address('n1'), 1, a1)
-        c2a = TCP(t2, n2.get_address('n1'), 1, n1.get_address('n2'), 1, a1)
+        c1a = TCP(t1, n1.get_address('n2'), 1, n2.get_address('n1'), 1, 3000, a1)
+        c2a = TCP(t2, n2.get_address('n1'), 1, n1.get_address('n2'), 1, 3000, a1)
 
         # send a file
         with open(self.filename,'r') as f:
