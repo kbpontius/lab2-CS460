@@ -8,7 +8,7 @@ from buffer import SendBuffer,ReceiveBuffer
 
 class TCP(Connection):
     ''' A TCP connection between two hosts.'''
-    def __init__(self,transport,source_address,source_port,destination_address,destination_port,window_size=1000,app=None):
+    def __init__(self,transport,source_address,source_port,destination_address,destination_port,window_size,app=None):
         Connection.__init__(self,transport,source_address,source_port, destination_address,destination_port,app)
 
         ### RTO Timer Properties
@@ -77,6 +77,7 @@ class TCP(Connection):
         self.plot_rate_on = False
         self.plot_queue_on = False
         self.plot_window_on = False
+        self.plot_queueing_delay_on = True
 
         file_name = "output.txt"
         header_message = "## header message ##"
@@ -95,6 +96,9 @@ class TCP(Connection):
         elif self.plot_window_on:
             file_name = "window_plot.txt"
             header_message = "# Time (seconds) Congestion Window Size (bytes)"
+        elif self.plot_queueing_delay_on:
+            file_name = "queuing_delay.txt"
+            header_message = "# Time (seconds) Queueing Delay (seconds)"
 
         if self.write_to_disk:
             file_title,file_extension = file_name.split('.')
@@ -109,7 +113,12 @@ class TCP(Connection):
         if self.destination_port != self.plot_port_number:
             return
 
-        if not self.plot_sequence_on and not self.plot_rate_on and not self.plot_queue_on and not self.plot_window_on:
+        if not self.plot_sequence_on \
+                and not self.plot_rate_on \
+                and not self.plot_queue_on \
+                and not self.plot_window_on \
+                and not self.plot_queueing_delay_on:
+
             Sim.trace("TCP",message)
 
     def plot_sequence(self, sequence_number, isACK = False, dropped=False):
@@ -138,6 +147,13 @@ class TCP(Connection):
 
         if self.plot_window_on:
             Sim.trace("TCP", message)
+
+    def plot_queueing_delay(self, delay):
+        if self.destination_port != self.plot_port_number:
+            return
+
+        if self.plot_queueing_delay_on:
+            print delay
 
     ### Congestion Control Methods
 
@@ -384,6 +400,7 @@ class TCP(Connection):
 
     def handle_data(self,packet):
         self.plot_rate(packet.length)
+        self.plot_queueing_delay(packet.queueing_delay)
 
         self.trace("%s (%d) received TCP segment from %d; Seq: %d, Ack: %d" % (self.node.hostname,packet.destination_address,packet.source_address,packet.sequence,packet.ack_number))
         self.receive_buffer.put(packet.body, packet.sequence)
