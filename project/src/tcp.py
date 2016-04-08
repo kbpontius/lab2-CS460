@@ -6,7 +6,6 @@ from connection import Connection
 from tcppacket import TCPPacket
 from buffer import SendBuffer,ReceiveBuffer
 
-
 class TCP(Connection):
     ''' A TCP connection between two hosts.'''
     def __init__(self,transport,source_address,source_port,destination_address,destination_port,app=None):
@@ -37,7 +36,7 @@ class TCP(Connection):
         self.mss = 1000
         # send window; represents the total number of bytes that may
         # be outstanding at one time
-        self.window = self.mss
+        self.window = 30000
         # largest sequence number that has been ACKed so far; represents
         # the next sequence number the client expects to receive
         self.sequence = 0
@@ -71,13 +70,13 @@ class TCP(Connection):
         self.is_aiad = True
 
         ### FILE WRITING
-        self.write_to_disk = True
+        self.write_to_disk = False
         self.plot_port_number = 1
 
         self.plot_sequence_on = False
         self.plot_rate_on = False
         self.plot_queue_on = False
-        self.plot_window_on = True
+        self.plot_window_on = False
 
         file_name = "output.txt"
         header_message = "## header message ##"
@@ -142,62 +141,62 @@ class TCP(Connection):
 
     ### Congestion Control Methods
 
-    def is_threshold_reached(self):
-        self.trace("CURRENT THRESHOLD: %d" % self.threshold)
-        return self.window >= self.threshold
+    # def is_threshold_reached(self):
+    #     self.trace("CURRENT THRESHOLD: %d" % self.threshold)
+    #     return self.window >= self.threshold
 
-    def slowstart_increment_cwnd(self, bytes_acknowledged):
-        self.trace("AI -> BYTES ACKed: %d" % bytes_acknowledged)
+    # def slowstart_increment_cwnd(self, bytes_acknowledged):
+    #     self.trace("AI -> BYTES ACKed: %d" % bytes_acknowledged)
+    #
+    #     if self.restarting_slow_start:
+    #         self.restarting_slow_start = False
+    #         return
+    #
+    #     self.window += min(bytes_acknowledged, self.window)
+    #     self.trace("Window (Slow Start) == %d" % self.window)
 
-        if self.restarting_slow_start:
-            self.restarting_slow_start = False
-            return
-
-        self.window += min(bytes_acknowledged, self.window)
-        self.trace("Window (Slow Start) == %d" % self.window)
-
-    def additiveincrease_increment_cwnd(self, bytes_acknowledged):
-        additive_increase = self.get_additive_increase(bytes_acknowledged)
-        self.window += additive_increase
-        self.trace("Window (AI) == %d" % self.window)
+    # def additiveincrease_increment_cwnd(self, bytes_acknowledged):
+    #     additive_increase = self.get_additive_increase(bytes_acknowledged)
+    #     self.window += additive_increase
+    #     self.trace("Window (AI) == %d" % self.window)
 
     # Add up increase until it's >= self.mss (1000), then return that amount.
-    def get_additive_increase(self, bytes_acknowledged):
-        increase = (self.mss * bytes_acknowledged / self.window)
-        self.additive_increase_total += increase
+    # def get_additive_increase(self, bytes_acknowledged):
+    #     increase = (self.mss * bytes_acknowledged / self.window)
+    #     self.additive_increase_total += increase
+    #
+    #     if self.additive_increase_total >= self.mss:
+    #         self.additive_increase_total -= self.mss
+    #         return self.mss
+    #     else:
+    #         self.trace("ADDITIVE INCREASE STORED: %d" % increase)
+    #         return 0
 
-        if self.additive_increase_total >= self.mss:
-            self.additive_increase_total -= self.mss
-            return self.mss
-        else:
-            self.trace("ADDITIVE INCREASE STORED: %d" % increase)
-            return 0
 
+    # def reset_fastretransmit_acks(self):
+    #     self.retransmit_acks = [-1] * 3
 
-    def reset_fastretransmit_acks(self):
-        self.retransmit_acks = [-1] * 3
+    # def is_fast_retransmit(self, ack_num):
+    #     self.retransmit_acks[2] = self.retransmit_acks[1]
+    #     self.retransmit_acks[1] = self.retransmit_acks[0]
+    #     self.retransmit_acks[0] = ack_num
+    #
+    #     self.trace("FAST RETRANSMIT: %i, %i, %i" % (self.retransmit_acks[0], self.retransmit_acks[1], self.retransmit_acks[2]))
+    #
+    #     return self.retransmit_acks[0] == self.retransmit_acks[1] and self.retransmit_acks[0] == self.retransmit_acks[2]
 
-    def is_fast_retransmit(self, ack_num):
-        self.retransmit_acks[2] = self.retransmit_acks[1]
-        self.retransmit_acks[1] = self.retransmit_acks[0]
-        self.retransmit_acks[0] = ack_num
-
-        self.trace("FAST RETRANSMIT: %i, %i, %i" % (self.retransmit_acks[0], self.retransmit_acks[1], self.retransmit_acks[2]))
-
-        return self.retransmit_acks[0] == self.retransmit_acks[1] and self.retransmit_acks[0] == self.retransmit_acks[2]
-
-    def execute_loss_event(self, ack_loss_event=False):
-        if not self.is_aiad:
-            self.threshold = max(self.window / 2, self.mss)
-        else:
-            self.threshold -= max(self.threshold - self.mss, 0)
-
-        self.window = self.mss
-
-        self.additive_increase_total = 0
-        self.restarting_slow_start = True
-        self.trace("NEW WINDOW: %d" % self.window)
-        self.trace("NEW THRESHOLD: %d" % self.threshold)
+    # def execute_loss_event(self, ack_loss_event=False):
+    #     if not self.is_aiad:
+    #         self.threshold = max(self.window / 2, self.mss)
+    #     else:
+    #         self.threshold -= max(self.threshold - self.mss, 0)
+    #
+    #     self.window = self.mss
+    #
+    #     self.additive_increase_total = 0
+    #     self.restarting_slow_start = True
+    #     self.trace("NEW WINDOW: %d" % self.window)
+    #     self.trace("NEW THRESHOLD: %d" % self.threshold)
 
     ### General Methods
 
@@ -299,7 +298,7 @@ class TCP(Connection):
 
     def handle_ack(self,packet):
         rtt = Sim.scheduler.current_time() - packet.sent_time
-        self.trace("ACK RECEIVED: %d; RTT: %s" % (packet.ack_number, rtt))
+        self.trace("%s (%d) ACK RECEIVED: %d; RTT: %s" % (self.node.hostname,self.source_address,packet.ack_number, rtt))
         self.send_buffer.slide(packet.ack_number)
 
         if self.halt_if_finished():
@@ -310,21 +309,23 @@ class TCP(Connection):
         acked_byte_count = packet.ack_number - self.sequence
         self.sequence = packet.ack_number
 
-        if self.is_retransmitting is False and self.is_fast_retransmit(packet.ack_number):
-            self.is_retransmitting = True
-            self.trace("PACKETS 1: %d; 2: %d; 3: %d" % (self.retransmit_acks[0], self.retransmit_acks[1], self.retransmit_acks[2]))
-            self.retransmit(None,ack_loss_event=True)
-            return
-        elif self.is_retransmitting and acked_byte_count is 0:
-            return
+        # Commmented out because fast retransmit isn't being used.
+        # if self.is_retransmitting is False and self.is_fast_retransmit(packet.ack_number):
+        #     self.is_retransmitting = True
+        #     self.trace("PACKETS 1: %d; 2: %d; 3: %d" % (self.retransmit_acks[0], self.retransmit_acks[1], self.retransmit_acks[2]))
+        #     self.retransmit(None,ack_loss_event=True)
+        #     return
+        # elif self.is_retransmitting and acked_byte_count is 0:
+        #     return
 
-        self.is_retransmitting = False
+        # self.is_retransmitting = False
 
-        if self.is_threshold_reached():
-            self.trace("---> ACKED BYTE COUNT: %d" % acked_byte_count)
-            self.additiveincrease_increment_cwnd(acked_byte_count)
-        else:
-            self.slowstart_increment_cwnd(acked_byte_count)
+        # Commented out because the window size should be fixed.
+        # if self.is_threshold_reached():
+        #     self.trace("---> ACKED BYTE COUNT: %d" % acked_byte_count)
+        #     self.additiveincrease_increment_cwnd(acked_byte_count)
+        # else:
+        #     self.slowstart_increment_cwnd(acked_byte_count)
 
         self.plot_window(self.window)
 
@@ -332,7 +333,7 @@ class TCP(Connection):
         self.calculate_rtt(rtt)
 
         if self.send_buffer.available() >= 0 or self.send_buffer.outstanding() > 0:
-            self.restart_timer()
+            self.restart_timer(print_trace=False)
         else:
             self.cancel_timer()
 
@@ -347,15 +348,16 @@ class TCP(Connection):
         resend_data, resend_sequence = self.send_buffer.resend(self.mss)
         self.send_packet(resend_data, resend_sequence)
 
-        # Reset for slow start.
-        self.reset_fastretransmit_acks()
-        self.execute_loss_event(ack_loss_event=ack_loss_event)
+        # # Reset for slow start.
+        # self.reset_fastretransmit_acks()
+        # self.execute_loss_event(ack_loss_event=ack_loss_event)
+        #
+        # if not event:
+        #     self.trace("%s (%d) retransmission timer fired" % (self.node.hostname,self.source_address))
 
-        if not event:
-            self.trace("%s (%d) retransmission timer fired" % (self.node.hostname,self.source_address))
-
-    def restart_timer(self, timer_expired = False):
-        self.trace("WARNING: Restarting timer.")
+    def restart_timer(self, timer_expired = False, print_trace = True):
+        if print_trace:
+            self.trace("%s (%d) WARNING: Restarting timer." % (self.node.hostname, self.source_address))
 
         if self.send_buffer.available() == 0 and self.send_buffer.outstanding() == 0:
             self.cancel_timer()
