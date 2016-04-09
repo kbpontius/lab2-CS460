@@ -68,6 +68,7 @@ class TCP(Connection):
 
         ### Testing
         self.is_aiad = True
+        self.is_dynamic_timer = True
 
         ### FILE WRITING
         self.write_to_disk = False
@@ -77,7 +78,8 @@ class TCP(Connection):
         self.plot_rate_on = False
         self.plot_queue_on = False
         self.plot_window_on = False
-        self.plot_queueing_delay_on = True
+        self.plot_queueing_delay_on = False
+        self.plot_timer_on = True
 
         file_name = "output.txt"
         header_message = "## header message ##"
@@ -99,6 +101,9 @@ class TCP(Connection):
         elif self.plot_queueing_delay_on:
             file_name = "queuing_delay.txt"
             header_message = "# Time (seconds) Queueing Delay (seconds)"
+        elif self.plot_timer_on:
+            file_name = "timer_plot.txt"
+            header_message = "# Time (seconds) Timer Value (seconds)"
 
         if self.write_to_disk:
             file_title,file_extension = file_name.split('.')
@@ -117,7 +122,8 @@ class TCP(Connection):
                 and not self.plot_rate_on \
                 and not self.plot_queue_on \
                 and not self.plot_window_on \
-                and not self.plot_queueing_delay_on:
+                and not self.plot_queueing_delay_on \
+                and not self.plot_timer_on:
 
             Sim.trace("TCP",message)
 
@@ -154,6 +160,13 @@ class TCP(Connection):
 
         if self.plot_queueing_delay_on:
             print delay
+
+    def plot_timer(self, timer):
+        if self.destination_port != self.plot_port_number:
+            return
+
+        if self.plot_timer_on:
+            Sim.trace("TCP", str(timer) + " seconds")
 
     ### Congestion Control Methods
 
@@ -240,6 +253,7 @@ class TCP(Connection):
     def backoff_timer(self):
         self.rto *= 2
         self.validate_timer()
+        self.plot_timer(self.rto)
 
     def validate_timer(self):
         if self.rto < self.min_rtt:
@@ -346,7 +360,10 @@ class TCP(Connection):
         self.plot_window(self.window)
 
         self.send_next_packet_if_possible()
-        self.calculate_rtt(rtt)
+
+        if self.is_dynamic_timer:
+            self.calculate_rtt(rtt)
+            self.plot_timer(self.rto)
 
         if self.send_buffer.available() >= 0 or self.send_buffer.outstanding() > 0:
             self.restart_timer(print_trace=False)
